@@ -13,3 +13,5 @@ EXPORT(VIDIOC_QUERYBUF,		unsigned int)
 EXPORT(V4L2_PIX_FMT_RGB24, 	unsigned int)
 EXPORT(V4L2_PIX_FMT_NV12, 	unsigned int)
 EXPORT(V4L2_PIX_FMT_RGB32, 	unsigned int)
+EXPORT(V4L2_PIX_FMT_YUYV, 	unsigned int)
+
