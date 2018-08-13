@@ -4,10 +4,16 @@ import Foundation
 public class VideoOutput {
   public let device: VideoDevice
   let buffers: [VideoFrameBuffer]
+  public let frameSizeInBytes:Int
 
-  init(device:VideoDevice, buffers:[VideoFrameBuffer]) {
+  init(device:VideoDevice, buffers:[VideoFrameBuffer], frameSizeInBytes:Int) {
     self.device = device
     self.buffers = buffers
+    self.frameSizeInBytes = frameSizeInBytes
+  }
+
+  public func write(frame: UnsafeRawPointer) throws {
+    Glibc.write(self.device.fileDescriptor, frame, self.frameSizeInBytes)
   }
 
   deinit {
@@ -35,6 +41,6 @@ public extension VideoDevice {
       throw VideoDeviceError.UnableToWriteFormatToDevice(device:self)
     }
 
-    return VideoOutput(device:self, buffers:[])
+    return VideoOutput(device:self, buffers:[], frameSizeInBytes:frameSizeInBytes)
   }
 }
