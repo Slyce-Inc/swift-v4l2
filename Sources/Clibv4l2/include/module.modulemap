@@ -1,4 +1,4 @@
-module libv4l2 [system] {
+module Clibv4l2 [system] {
   header "shim.h"
   link "v4l2"
   export *
