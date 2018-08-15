@@ -18,7 +18,10 @@ public class VideoDevice {
   public class func open(pathToFile:String) throws -> VideoDevice {
     var st = stat()
     guard -1 != stat(pathToFile, &st) else {
-      throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"\(errno), \(strerror(errno))")
+      guard let rawSystemMessage = strerror(errno), let systemMessage = String(cString:rawSystemMessage, encoding:.utf8) else {
+        throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"\(errno)")
+      }
+      throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"\(systemMessage) (\(errno))")
     }
     guard 0 != (S_IFCHR & st.st_mode) else {
       throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"Not a character device")

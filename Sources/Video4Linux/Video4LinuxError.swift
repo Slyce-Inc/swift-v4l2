@@ -11,5 +11,5 @@ case UnableToQueryBuffer(device:VideoDevice)
 case UnableToQueueBuffer(device:VideoDevice)
 case UnableToEnableStreaming(device:VideoDevice)
 case UnableToMapBuffer(device:VideoDevice)
-case UnableToAllocateEnoughBuffers(device:VideoDevice)
+case UnableToAllocateEnoughBuffers(device:VideoDevice, numberOfBuffers:Int)
 }

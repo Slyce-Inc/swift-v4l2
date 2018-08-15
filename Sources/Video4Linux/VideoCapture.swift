@@ -119,7 +119,7 @@ extension VideoDevice {
     }
 
     if Int(req.count) < numberOfBuffers {
-      throw VideoDeviceError.UnableToAllocateEnoughBuffers(device:self)
+      throw VideoDeviceError.UnableToAllocateEnoughBuffers(device:self, numberOfBuffers:numberOfBuffers)
     }
 
     var buffers: [VideoFrameBuffer] = []
