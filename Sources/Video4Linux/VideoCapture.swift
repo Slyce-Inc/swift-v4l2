@@ -6,11 +6,21 @@ import Foundation
 public class VideoCapture {
   public let device:VideoDevice
   private let buffers: [VideoFrameBuffer]
+  private let format: v4l2_format
   private var source: DispatchSourceRead?
 
-  init(device:VideoDevice, buffers:[VideoFrameBuffer]) {
+  init(device:VideoDevice, buffers:[VideoFrameBuffer], format:v4l2_format) {
     self.device = device
     self.buffers = buffers
+    self.format = format
+  }
+
+  public var width: Int {
+    return Int(format.fmt.pix.width)
+  }
+
+  public var height: Int {
+    return Int(format.fmt.pix.height)
   }
 
   deinit {
@@ -144,6 +154,6 @@ extension VideoDevice {
       buffers.append(VideoFrameBuffer(baseAddress:baseAddress, length:Int(buf.length)))
     }
 
-    return VideoCapture(device:self, buffers:buffers)
+    return VideoCapture(device:self, buffers:buffers, format:fmt)
   }
 }
