@@ -53,7 +53,7 @@ public class VideoOutput {
 
 
 public extension VideoDevice {
-  public func startOutput(width:Int, height:Int, pixelFormat:PixelFormat, numberOfBuffers:Int = 8) throws -> VideoOutput {
+  func startOutput(width:Int, height:Int, pixelFormat:PixelFormat, numberOfBuffers:Int = 8) throws -> VideoOutput {
     var v = v4l2_format()
     v.type = V4L2_BUF_TYPE_VIDEO_OUTPUT.rawValue
     guard ioctl(self.fileDescriptor, _VIDIOC_G_FMT, &v) != -1 else {

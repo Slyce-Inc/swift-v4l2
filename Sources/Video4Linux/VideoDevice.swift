@@ -27,7 +27,7 @@ public class VideoDevice {
       throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"Not a character device")
     }
     guard case let fd = Glibc.open(pathToFile, O_RDWR | O_NONBLOCK, 0), fd > 0 else {
-      throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"\(errno), \(strerror(errno))")
+      throw VideoDeviceError.UnableToOpenDevice(pathToFile:pathToFile, message:"\(errno), \(strerror(errno)!)")
     }
     return VideoDevice(pathToFile:pathToFile, fileDescriptor:fd)
   }

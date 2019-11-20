@@ -1,6 +1,6 @@
 
 public extension VideoCapture {
-  public struct Constraints {
+  struct Constraints {
     let width:Int?
     let height:Int?
     let pixelFormat:VideoDevice.PixelFormat?
