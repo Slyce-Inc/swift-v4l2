@@ -7,7 +7,7 @@ public class VideoCapture {
   public let device:VideoDevice
   private let buffers: [VideoFrameBuffer]
   private let format: v4l2_format
-  private var source: DispatchSourceRead?
+  private var running = false
 
   init(device:VideoDevice, buffers:[VideoFrameBuffer], format:v4l2_format) {
     self.device = device
@@ -48,27 +48,22 @@ public class VideoCapture {
       throw VideoDeviceError.UnableToEnableStreaming(device:device)
     }
 
-    let source = DispatchSource.makeReadSource(fileDescriptor:device.fileDescriptor, queue:queue)
-    source.setEventHandler(handler:{ [weak self] in
-      guard nil != self else {
-        return
+    running = true
+    DispatchQueue.global(qos: .userInteractive).async { [weak self] in
+      while let this = self, this.running {
+        var buf = v4l2_buffer()
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
+        buf.memory = V4L2_MEMORY_MMAP.rawValue
+        if -1 != ioctl(this.device.fileDescriptor, _VIDIOC_DQBUF, &buf) {
+          handler(this.buffers[Int(buf.index)].baseAddress, Int(buf.bytesused))
+          _ = ioctl(this.device.fileDescriptor, _VIDIOC_QBUF, &buf)
+        }
       }
-      var buf = v4l2_buffer()
-      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
-      buf.memory = V4L2_MEMORY_MMAP.rawValue
-      if -1 != ioctl(self!.device.fileDescriptor, _VIDIOC_DQBUF, &buf) {
-        handler(self!.buffers[Int(buf.index)].baseAddress, Int(buf.bytesused))
-        _ = ioctl(self!.device.fileDescriptor, _VIDIOC_QBUF, &buf)
-      }
-    })
-    source.resume()
-    self.source = source
+    }
   }
 
   public func stopStreaming() {
-    self.source?.cancel()
-    self.source = nil
-
+    running = false
     var type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
     _ = ioctl(device.fileDescriptor, _VIDIOC_STREAMOFF, &type)
   }
