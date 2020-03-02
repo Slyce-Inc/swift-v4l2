@@ -7,7 +7,7 @@ public class VideoCapture {
   public let device:VideoDevice
   private let buffers: [VideoFrameBuffer]
   private let format: v4l2_format
-  private var source: DispatchSourceRead?
+  private var running = false
 
   init(device:VideoDevice, buffers:[VideoFrameBuffer], format:v4l2_format) {
     self.device = device
@@ -67,9 +67,7 @@ public class VideoCapture {
   }
 
   public func stopStreaming() {
-    self.source?.cancel()
-    self.source = nil
-
+    running = false
     var type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
     _ = ioctl(device.fileDescriptor, _VIDIOC_STREAMOFF, &type)
   }
