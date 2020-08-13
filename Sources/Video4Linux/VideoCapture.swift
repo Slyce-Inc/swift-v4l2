@@ -31,7 +31,7 @@ public class VideoCapture {
     }
   }
 
-  public func startStreaming(queue:DispatchQueue = .main, handler:@escaping (UnsafeMutableRawPointer,Int)->()) throws {
+  public func startStreaming(queue targetQueue:DispatchQueue = .main, handler:@escaping (UnsafeMutableRawPointer,Int)->()) throws {
     for i in 0 ..< buffers.count {
       var buf = v4l2_buffer()
       buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
@@ -48,7 +48,8 @@ public class VideoCapture {
       throw VideoDeviceError.UnableToEnableStreaming(device:device)
     }
  
-    DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+    let queue = DispatchQueue(label: "VideoCapture", qos: .userInitiated)
+    queue.async { [weak self] in
       var statbuf = stat()
       while let this = self {
         guard 0 >= fstat(this.device.fileDescriptor, &statbuf) else {
@@ -58,8 +59,14 @@ public class VideoCapture {
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
         buf.memory = V4L2_MEMORY_MMAP.rawValue
         if -1 != ioctl(this.device.fileDescriptor, _VIDIOC_DQBUF, &buf) {
-          handler(this.buffers[Int(buf.index)].baseAddress, Int(buf.bytesused))
-          _ = ioctl(this.device.fileDescriptor, _VIDIOC_QBUF, &buf)
+          targetQueue.async {
+            handler(this.buffers[Int(buf.index)].baseAddress, Int(buf.bytesused))
+            queue.async {
+              guard -1 != ioctl(this.device.fileDescriptor, _VIDIOC_QBUF, &buf) else {
+                fatalError("_VIDIOC_QBUF")
+              }
+            }
+          }
         }
       }
       print("stopping.")
