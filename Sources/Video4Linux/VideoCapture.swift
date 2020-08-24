@@ -31,7 +31,7 @@ public class VideoCapture {
     }
   }
 
-  public func startStreaming(queue targetQueue:DispatchQueue = .main, handler:@escaping (UnsafeMutableRawPointer,Int)->()) throws {
+  public func startStreaming(queue targetQueue:DispatchQueue = .main, handler:@escaping (UnsafeMutableRawPointer,Int)->(), errorHandler:@escaping (VideoDeviceError)->()) throws {
     for i in 0 ..< buffers.count {
       var buf = v4l2_buffer()
       buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
@@ -39,18 +39,23 @@ public class VideoCapture {
       buf.index = UInt32(i)
 
       if -1 == ioctl(device.fileDescriptor, _VIDIOC_QBUF, &buf) {
-        throw VideoDeviceError.UnableToQueueBuffer(device:device)
+        targetQueue.async {
+          errorHandler(VideoDeviceError.UnableToQueueBuffer(device:self.device))
+        }
       }
     }
 
     var type = V4L2_BUF_TYPE_VIDEO_CAPTURE.rawValue
     if -1 == ioctl(device.fileDescriptor, _VIDIOC_STREAMON, &type) {
-      throw VideoDeviceError.UnableToEnableStreaming(device:device)
+       targetQueue.async {
+            errorHandler(VideoDeviceError.UnableToEnableStreaming(device:self.device))
+       }
     }
  
     let queue = DispatchQueue(label: "VideoCapture", qos: .userInitiated)
     queue.async { [weak self] in
       var statbuf = stat()
+      var exit = false
       while let this = self {
         guard 0 >= fstat(this.device.fileDescriptor, &statbuf) else {
           continue
@@ -67,6 +72,16 @@ public class VideoCapture {
               }
             }
           }
+        } else {
+            if errno != EAGAIN {
+                targetQueue.async {
+                    errorHandler(VideoDeviceError.UnableToDequeueBuffer(device:this.device))
+                    exit = true
+                }
+            }
+        }
+        if (exit) {
+            break
         }
       }
       print("stopping.")
